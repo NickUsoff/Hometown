@@ -1,6 +1,10 @@
 <html>
 <head>
 <title>Your next hometown</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="http://yui.yahooapis.com/pure/0.5.0/pure-min.css">
+    <link rel="stylesheet" href="css/layouts/side-menu.css">
 </head>
 
 
@@ -12,7 +16,6 @@ $length = 351;
 
 //extract XML file
 if (file_exists('data.xml')) {
-	$length = 351;
     $xml = simplexml_load_file('data.xml');
 } else {
     exit('Failed to open data.xml.');
@@ -27,14 +30,33 @@ $diversity = array();
 $latitudes = array();
 $longitudes = array();
 $schools = array();
+
+$towns = array();
+
 for($i = 0; $i < $length; $i++){
-	$names[$i] =  $xml->town[$i]->name;
-	$populations[$i] = $xml->town[$i]->population;
-	$crimes[$i] = $xml->town[$i]->crimeData;
-	$latitude[$i] = $xml->town[$i]->latitude;
-	$longitude[$i] = $xml->town[$i]->longitude;
-	$prices[$i] = $xml->town[$i]->homePrice;
+	$towns[$i] = $xml->town[$i];
 }
+
+shuffle($towns);
+
+// for($i = 0; $i < $length; $i++){
+// 	$names[$i] =  $xml->town[$i]->name;
+// 	$populations[$i] = $xml->town[$i]->population;
+// 	$crimes[$i] = $xml->town[$i]->crimeData;
+// 	$latitude[$i] = $xml->town[$i]->latitude;
+// 	$longitude[$i] = $xml->town[$i]->longitude;
+// 	$prices[$i] = $xml->town[$i]->homePrice;
+// }
+
+for($i = 0; $i < $length; $i++){
+	$names[$i] =  $towns[$i]->name;
+	$populations[$i] = $towns[$i]->population;
+	$crimes[$i] = $towns[$i]->crimeData;
+	$latitude[$i] = $towns[$i]->latitude;
+	$longitude[$i] = $towns[$i]->longitude;
+	$prices[$i] = $towns[$i]->homePrice;
+}
+
 
 //distance calculation given coordinates of two places
 function getDistanceBetweenPointsNew($latitude1, $longitude1, $latitude2, $longitude2, $unit = 'Mi') {
@@ -301,23 +323,66 @@ function sortByScore(& $scores, & $indexes){
 //write the top ten scores to the DOM
 sortByScore($scores, $townsInRange);
 $posScore = sumPossibilities($price, $school, $diversity, $safety);
+echo
+	'<div id="layout">
+    <!-- Menu toggle -->
+    <a href="#menu" id="menuLink" class="menu-link">
+        <!-- Hamburger icon -->
+        <span></span>
+    </a>
+
+    <div id="menu">
+        <div class="pure-menu pure-menu-open">
+            <a class="pure-menu-heading" href="#">Results</a>
+            <ul>';
+for($i = 0; $i < count($scores) && $i < 10; $i++){
+	echo '<li><a href="#';
+	echo $i;
+	echo 'town">';
+	$townNum = $townsInRange[$i];
+	echo $names[$townNum];
+	echo '</a></li>';
+}
+echo
+            '</ul>
+        </div>
+    </div>
+
+    <div id="main">
+        <div class="header">
+            <h1>Results</h1>
+            <h2>Top towns based on your preferences</h2>
+        </div>
+
+        <div class="content">';
+
 for($i = 0; $i < count($scores) && $i < 10; $i++){
 	$townNum = $townsInRange[$i];
-	echo "<h2 id='";
+	echo "<h1 id='";
 	echo $i;
-	echo "town'>";
+	echo "town' class='content-head'>";
 	echo ($i + 1);
-	echo ") ";
+	echo " - ";
 	echo $names[$townNum];
-	echo " ";
+	echo "</h1>";
+	echo "<h2 class='content-head'>";
+	echo round($scores[$i]/$posScore, 2)*100;
+	echo "% match<br></p>";
+	echo "</h2>";
+	echo "Average home price: $";
 	echo $prices[$townNum];
-	echo " ";
+	echo "<br/>";
+	echo "Population: ";
+	echo $populations[$townNum];
+	echo "<br/>";
 	echo $crimes[$townNum];
 	echo ": ";
-	echo round($scores[$i]/$posScore, 2)*100;
-	echo "% match<br></h2>";
-
+	echo "<hr/>";
 }
+
+echo '</div>
+    </div>
+</div><script src="js/ui.js"></script>';
 ?>
 </body>
 </html>
